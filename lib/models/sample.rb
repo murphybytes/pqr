@@ -5,6 +5,7 @@ class Sample
   belongs_to :population
 
   field :value, type: BigDecimal
-  # Number of hours since Jan 1 1970
-  field :timestamp, type: Integer
+  field :timestamp, type: DateTime
+
+
 end
