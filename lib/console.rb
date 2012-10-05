@@ -2,7 +2,6 @@ $: << File.join( Dir.pwd, 'lib' )
 
 
 require 'mongoid'
-require 'models/population'
 require 'models/sample'
 require 'models/data_set'
 
