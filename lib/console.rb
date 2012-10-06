@@ -1,9 +1,11 @@
 $: << File.join( Dir.pwd, 'lib' )
 
 
-require 'mongoid'
-require 'models/sample'
-require 'models/data_set'
+
+Dir.glob( "lib/**/*.rb" ) do | file |
+  require file
+end
+
 
 environment = :development
 environment = ENV['ENV'].to_sym if ENV.key?( 'ENV' )
