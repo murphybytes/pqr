@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-$: << File.join( Dir.pwd, 'lib' )
+1$: << File.join( Dir.pwd, 'lib' )
 require 'date'
 require 'mongoid'
 require 'trollop'

@@ -5,7 +5,7 @@ class Sample
   belongs_to :data_set 
 
   field :temperature, type: BigDecimal
-  field :power_units, type: BigDecimal
+  field :generated_kilowatts, type: BigDecimal
   field :timestamp, type: DateTime
 
 

@@ -2,43 +2,79 @@
 $: << File.join( Dir.pwd, 'lib' )
 require 'date'
 require 'mongoid'
-require 'trollop'
+require 'optparse'
+require 'ostruct'
 require 'csv'
 
 require 'models/sample'
 require 'models/data_set'
 
+GENERATED_KW=6
+TEMPERATURE=3
+MONTH=0
+DAY=1
+HOURS=2
+
 process_row = lambda { | dataset, row |
   # only process row if generated power units is present
-  unless row[5].nil?
-    hours = row[2].to_i / 100
-    timestamp = DateTime.new( DateTime.now.year, row[0].to_i, row[1].to_i, hours )
-    dataset.samples << Sample.create(:timestamp => timestamp, :temperature => row[3], :power_units => row[5] )
+  unless row[GENERATED_KW].nil?
+    hours = row[HOURS].to_i / 100
+    timestamp = DateTime.new( DateTime.now.year, row[MONTH].to_i, row[DAY].to_i, hours )
+    dataset.samples << Sample.create(:timestamp => timestamp, :temperature => row[TEMPERATURE], :generated_kilowatts => row[GENERATED_KW] )
   end
 
 }
 
-opts = Trollop::options do 
+options = OpenStruct.new
+options.filename = nil
+options.ignore_header = false
+options.dataset_name = nil
+options.environment = "development"
 
-  opt :file, "csv file containing sample data", :type => :string
-  opt :ignore_header, "Ignore first line of csv"
-  opt :data_set_name, "Name of data set to contain populations", :type => :string
-  opt :environment, "development | test | production", :type => :string, :default => 'development'
-  #opt :sample_column, "Column of the csv to process", :type => :integer
+opts = OptionParser.new do | opts |
+  opts.banner = "Usage: load-sample.rb [options]"
+  opts.separator ""
+  opts.separator "Options:"
+
+
+  opts.on( "-f", "--file FILENAME",  "csv file containing sample data." ) do | filename |
+    options.filename = filename
+  end
+
+  opts.on( "-i", "--ignore-header", "Ignore the first line of csv." ) do 
+    options.ignore_header = true
+  end
+
+  opts.on( "-d", "--data-set-name NAME", "Name of data set to contain populations." ) do | name | 
+    options.dataset_name = name
+  end
+
+  opts.on( "-e", "--environment ENV", "Default #{options.environment}, Runtime environment." ) do | env | 
+    options.environment = env
+  end
+
+  opts.on_tail( "-h", "--help", "Show this message." ) do 
+    puts opts
+    exit
+  end
 end
 
 begin
 
-  Mongoid.load!( 'config/mongoid.yml', opts[:environment].to_sym )
+  opts.parse!(ARGV)
+
+  puts options.inspect
+
+  Mongoid.load!( 'config/mongoid.yml', options.environment.to_sym )
   Mongoid.raise_not_found_error = false
 
-  dataset = DataSet.find_or_create_by( name: opts[:data_set_name] )
+  dataset = DataSet.find_or_create_by( name: options.dataset_name )
 
   puts "Working...."
 
-  CSV.foreach( opts[:file] ) do | row |
-    if opts[:ignore_header]
-      opts[:ignore_header] = false
+  CSV.foreach( options.filename ) do | row |
+    if options.ignore_header
+      options.ignore_header = false
       next
     end
 
