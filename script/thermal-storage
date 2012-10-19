@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+$: << File.join( Dir.pwd, 'lib' )
+require 'date'
+require 'mongoid'
+require 'models/sample'
+require 'models/data_set'
+require 'ostruct'
+require 'trollop'
+
+
+
+SUB_COMMANDS = %w( create retrieve update delete )
+
+global_opts = Trollop::options do
+  banner "Manage thermal storage"
+  stop_on SUB_COMMANDS
+end
+
+
+cmd = ARGV.shift
+cmd_opts = case cmd
+when "create"
+Trollop::options do
+    banner "Create a new thermal storage record"
+    opt :data_set, "Data set storage will be associated with"
+    opt :name, "Name of storage"
+    opt :units, "Number of units of storage i.e. number of homes", type: Integer
+    opt :capacity, "Storage per unit in Kw", type: :double
+    opt :storage, "Initialization storage in Kw", type: :double
+    opt :charge_rate, "Rate at which storage can take a charge", type: :double    
+end
+when "retrieve"
+banner "Fetches thermal storage records based on criteria"
+Trollop::options do 
+    opt :data_set, "Fetches ts records for data set."
+    opt :name, "Filters ts records by name."
+end
+
+when "update"
+Trollop::options do
+    banner "Updates named thermal storage record"
+    opt :data_set, "Data set storage will be associated with"
+    opt :name, "Name of storage"
+    opt :units, "Number of units of storage i.e. number of homes", type: Integer
+    opt :capacity, "Storage per unit in Kw", type: :double
+    opt :storage, "Initialization storage in Kw", type: :double
+    opt :charge_rate, "Rate at which storage can take a charge", type: :double    
+end
+when "delete"
+Trollop::options do
+    banner "Deletes named thermal storage record"
+    opt :data_set, "Data set storage will be associated with"
+    opt :name, "Name of storage"
+end
+else
+    Trollop::die "Unknown command #{cmd}"
+end
+
