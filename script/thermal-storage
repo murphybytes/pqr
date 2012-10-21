@@ -4,44 +4,121 @@ require 'date'
 require 'mongoid'
 require 'models/sample'
 require 'models/data_set'
+require 'models/thermal_storage'
 require 'ostruct'
 require 'trollop'
 
 
+create_proc = proc { | global_options, command_options |
+  puts 
+  puts "Creating a thermal storage record '#{command_options[:name]}' associated with data set '#{command_options[:data_set]}'"
+  ds = DataSet.where( name: command_options[:data_set] )
+  raise "Data set '#{command_options[:data_set]}' does not exist" if ds.empty?
+  ds.first.thermal_storages << ThermalStorage.create( 
+                             units: command_options[:units],
+                             capacity: command_options[:capacity],
+                             base_threshold: command_options[:base_threshold],
+                             storage: command_options[:storage],
+                             charge_rate: command_options[:charge_rate],
+                             name: command_options[:name] )
+  ds.first.save!
+}
+
+retrieve_proc = proc { | global_options, command_options |
+  ts = nil
+
+  if command_options[:data_set].empty? and command_options[:name].empty?
+
+    ThermalStorage.all.each do | ts |
+      ts.pretty_print
+    end
+    return
+  end
+
+  if command_options[:name].empty? 
+    DataSet.where( name: command_options[:data_set] ).each do | ds |
+      ds.thermal_storages.each do | ts | 
+        ts.pretty_print
+      end
+    end
+    return
+  end
+
+  if command_options[:data_set].empty?
+    ThermalStorage.where( name: command_options[:name] ).each do | ts | 
+      ts.pretty_print 
+    end
+    return
+  end
+
+  ds = DataSet.where( name: command_options[:data_set] ).first
+  ThermalStorage.where( data_set_id: ds.id, :name => command_options[:name]).each do | ts |
+    ts.pretty_print
+  end
+
+}
+
+update_proc = proc { | global_options, command_options | 
+  ThermalStorage.fetch_by_dataset( command_options[:data_set], command_options[:name] ) do | ts |
+    ts.units = command_options[:units] unless command_options[:units].nil?
+    ts.capacity = command_options[:capacity] unless command_options[:capacity].nil?
+    ts.base_threshold = command_options[:base_threshold] unless command_options[:base_threshold].nil?
+    ts.storage = command_options[:storage] unless command_options[:storage].nil?
+    ts.charge_rate = command_options[:charge_rate] unless command_options[:charge_rate].nil?
+    ts.save!
+  end
+}
+
+delete_proc = proc { | global_options, command_options  | 
+
+  DataSet.where( name: command_options[:data_set] ).each do | ds |
+    puts "get ds"
+    ds.thermal_storages.where( name: command_options[:name] ).each do | ts | 
+      puts "get ts"
+      ds.thermal_storages.delete( ts ) 
+      ts.delete
+    end
+    ds.save!
+  end
+}
 
 SUB_COMMANDS = %w( create retrieve update delete )
 
-global_opts = Trollop::options do
+global_options = Trollop::options do
   banner "Manage thermal storage"
+  opt :environment, "Execution environment, Default development", type: :string, default: 'development'
   stop_on SUB_COMMANDS
 end
 
+mode = ARGV.shift
 
-cmd = ARGV.shift
-cmd_opts = case cmd
+command_options = case mode
 when "create"
 Trollop::options do
     banner "Create a new thermal storage record"
-    opt :data_set, "Data set storage will be associated with"
-    opt :name, "Name of storage"
-    opt :units, "Number of units of storage i.e. number of homes", type: Integer
+    opt :data_set, "Data set storage will be associated with", type: :string
+    opt :name, "Name of storage", type: :string
+    opt :units, "Number of units of storage i.e. number of homes", type: :integer
     opt :capacity, "Storage per unit in Kw", type: :double
     opt :storage, "Initialization storage in Kw", type: :double
-    opt :charge_rate, "Rate at which storage can take a charge", type: :double    
+    opt :charge_rate, "Rate at which storage can take a charge", type: :double
+    opt :base_threshold, "Threshold where we must charge", type: :double
 end
+
 when "retrieve"
-banner "Fetches thermal storage records based on criteria"
-Trollop::options do 
-    opt :data_set, "Fetches ts records for data set."
-    opt :name, "Filters ts records by name."
+
+Trollop::options do
+    banner "Fetches thermal storage records based on criteria" 
+    opt :data_set, "Fetches ts records for data set.", type: :string, default: ''
+    opt :name, "Filters ts records by name.", type: :string, default: ''
 end
 
 when "update"
 Trollop::options do
     banner "Updates named thermal storage record"
-    opt :data_set, "Data set storage will be associated with"
-    opt :name, "Name of storage"
-    opt :units, "Number of units of storage i.e. number of homes", type: Integer
+    opt :data_set, "Data set storage will be associated with", type: :string
+    opt :name, "Name of storage", type: :string
+    opt :units, "Number of units of storage i.e. number of homes", type: :integer
     opt :capacity, "Storage per unit in Kw", type: :double
     opt :storage, "Initialization storage in Kw", type: :double
     opt :charge_rate, "Rate at which storage can take a charge", type: :double    
@@ -49,10 +126,26 @@ end
 when "delete"
 Trollop::options do
     banner "Deletes named thermal storage record"
-    opt :data_set, "Data set storage will be associated with"
-    opt :name, "Name of storage"
+    opt :data_set, "Data set storage will be associated with", type: :string
+    opt :name, "Name of storage", type: :string
 end
 else
-    Trollop::die "Unknown command #{cmd}"
+    Trollop::die "Unknown command #{mode}"
 end
 
+begin
+  Mongoid.load!( 'config/mongoid.yml', global_options[:environment].to_sym )
+  Mongoid.raise_not_found_error = false
+
+  create_proc[ global_options, command_options ] if mode == 'create'
+  retrieve_proc[ global_options, command_options ] if mode == 'retrieve'
+  update_proc[ global_options, command_options ] if mode == 'update'
+  delete_proc[ global_options, command_options ] if mode == 'delete'
+
+rescue => e
+  puts e.message
+  puts e.backtrace.join("\n")
+  exit 1
+end
+
+exit 0
