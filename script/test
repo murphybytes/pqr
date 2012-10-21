@@ -1,0 +1,4 @@
+#!/bin/bash
+
+
+PQR_ENV=test rspec .

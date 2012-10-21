@@ -5,4 +5,5 @@ gem "trollop"
 
 group :test, :development do
   gem 'rspec'
+  gem 'factory_girl'
 end

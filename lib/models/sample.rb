@@ -7,6 +7,6 @@ class Sample
   field :temperature, type: BigDecimal
   field :generated_kilowatts, type: BigDecimal
   field :timestamp, type: DateTime
-
+  index( {timestamp: 1}, {  name: 'timestamp_index' } )
 
 end

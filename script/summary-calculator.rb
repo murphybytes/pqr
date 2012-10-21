@@ -45,7 +45,7 @@ opts = OptionParser.new do | opts |
   opts.separator ""
   opts.separator "Options:"
 
-  opts.on( "-d", "--data-set-name VALUE", "Name of data set to contain populations" ) do | value |
+  opts.on( "-d", "--data-set VALUE", "Name of data set to contain populations" ) do | value |
     options.data_set_name = value
   end
 
