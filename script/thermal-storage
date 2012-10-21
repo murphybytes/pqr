@@ -10,17 +10,18 @@ require 'trollop'
 
 
 create_proc = proc { | global_options, command_options |
-  puts 
+  puts
   puts "Creating a thermal storage record '#{command_options[:name]}' associated with data set '#{command_options[:data_set]}'"
   ds = DataSet.where( name: command_options[:data_set] )
   raise "Data set '#{command_options[:data_set]}' does not exist" if ds.empty?
-  ds.first.thermal_storages << ThermalStorage.create( 
+  ds.first.thermal_storages << ThermalStorage.create(
                              units: command_options[:units],
                              capacity: command_options[:capacity],
                              base_threshold: command_options[:base_threshold],
                              storage: command_options[:storage],
                              charge_rate: command_options[:charge_rate],
-                             name: command_options[:name] )
+                             name: command_options[:name],
+                             usage: command_options[:usage] )
   ds.first.save!
 }
 
@@ -65,6 +66,7 @@ update_proc = proc { | global_options, command_options |
     ts.base_threshold = command_options[:base_threshold] unless command_options[:base_threshold].nil?
     ts.storage = command_options[:storage] unless command_options[:storage].nil?
     ts.charge_rate = command_options[:charge_rate] unless command_options[:charge_rate].nil?
+    ts.usage = command_options[:usage] unless command_options[:usage].nil?
     ts.save!
   end
 }
@@ -103,6 +105,7 @@ Trollop::options do
     opt :storage, "Initialization storage in Kw", type: :double
     opt :charge_rate, "Rate at which storage can take a charge", type: :double
     opt :base_threshold, "Threshold where we must charge", type: :double
+    opt :usage, "Reduction in storage due to usage/cooling kW/hr", type: :double
 end
 
 when "retrieve"
@@ -121,7 +124,8 @@ Trollop::options do
     opt :units, "Number of units of storage i.e. number of homes", type: :integer
     opt :capacity, "Storage per unit in Kw", type: :double
     opt :storage, "Initialization storage in Kw", type: :double
-    opt :charge_rate, "Rate at which storage can take a charge", type: :double    
+    opt :charge_rate, "Rate at which storage can take a charge", type: :double
+    opt :usage, "Reduction in storage due to usage/cooling kW/hr", type: :double
 end
 when "delete"
 Trollop::options do
