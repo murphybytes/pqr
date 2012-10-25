@@ -6,4 +6,6 @@ class DataSet
   field :name, type: String
   field :description, type: String
   validates_uniqueness_of :name
+  
+
 end
