@@ -1,17 +1,12 @@
 
 
 
-    $: << File.join( Dir.pwd, 'lib' )
+$: << File.join( Dir.pwd, 'lib' )
 
+require 'pqr'
 
+environment = :development
+environment = ENV['PQR_ENV'].to_sym if ENV.key?( 'PQR_ENV' )
 
-    Dir.glob( "lib/**/*.rb" ) do | file |
-      require file
-    end
-
-
-    environment = :development
-    environment = ENV['PQR_ENV'].to_sym if ENV.key?( 'PQR_ENV' )
-
-    Mongoid.load!( 'config/mongoid.yml', environment )
+Mongoid.load!( 'config/mongoid.yml', environment )
 

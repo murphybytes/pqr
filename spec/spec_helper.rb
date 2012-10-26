@@ -1,9 +1,10 @@
 
 
+$: << File.join( Dir.pwd, 'lib' )
 
-Dir.glob( 'lib/**/*.rb' ) do | path | 
-  require path
-end
+require 'pqr'
+
+require 'pqr/console'
 
 ThermalStorage.all.delete
 
