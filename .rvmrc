@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ruby_string="jruby-1.6.7"
+ruby_string="ruby-1.9.3-p286"
 gemset_name="pqr"
 
 if rvm list strings | grep -q "${ruby_string}" ; then

@@ -33,6 +33,7 @@ GEM
 
 PLATFORMS
   java
+  ruby
 
 DEPENDENCIES
   factory_girl

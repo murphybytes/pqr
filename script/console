@@ -1,3 +1,3 @@
 #!/bin/bash
 
-irb -r lib/pqr/console.rb
+irb -r $(pwd)/lib/pqr/console.rb
