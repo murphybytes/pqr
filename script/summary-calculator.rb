@@ -47,7 +47,7 @@ begin
 
   dataset = DataSet.where( name: options.data_set_name ).first
 
-  PQR::Calculator.new( base_temperature: options.base_temperature, home_count: options.home_count ) do | calc |
+  PQR::Calculator.new( dataset: dataset, base_temperature: options.base_temperature, home_count: options.home_count ) do | calc |
     puts "Working ...."
 
     dataset.samples.each do | sample |
