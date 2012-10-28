@@ -1,38 +1,9 @@
 #!/usr/bin/env ruby
 $: << File.join( Dir.pwd, 'lib' )
-require 'date'
-require 'mongoid'
-require 'models/sample'
-require 'models/data_set'
+require 'pqr'
 require 'ostruct'
 require 'optparse'
 
-HOME_TEMP=70.0
-
-class Calculator
-
-  def initialize( opts )
-    @opts = opts
-    @total_kw_generated = 0.0
-    @total_kw_required_for_heating = 0.0
-    @base_temp = opts.base_temperature
-    @number_of_homes =  opts.home_count
-  end
-
-  def process_sample( sample )
-    @total_kw_generated += sample.generated_kilowatts
-
-    if @base_temp > sample.temperature
-      @total_kw_required_for_heating += (HOME_TEMP - sample.temperature) 
-    end
-  end
-
-  def show_results
-    puts "Total KW Generated #{@total_kw_generated}"
-    puts "Total KW Required for Home Heating #{ (@total_kw_required_for_heating * 713.4889 * @number_of_homes / 3413.0 ).to_i }" 
-  end
-
-end
 
 options = OpenStruct.new
 options.data_set_name = nil
@@ -74,19 +45,17 @@ begin
   Mongoid.raise_not_found_error = false
   raise "Missing required data set name" if options.data_set_name.nil?
 
-  dataset = DataSet.where( name: options.data_set_name )
+  dataset = DataSet.where( name: options.data_set_name ).first
 
-  calculator = Calculator.new options
+  PQR::Calculator.new( base_temperature: options.base_temperature, home_count: options.home_count ) do | calc |
+    puts "Working ...."
 
-  puts "Working"
+    dataset.samples.each do | sample |
+      calc.process_sample( sample )
+    end
 
-  dataset[0].samples.each do | sample |
-    calculator.process_sample( sample )
   end
 
-  puts "Done"
-
-  calculator.show_results
 
 rescue => e
   puts "Program failed -> #{ e }"
