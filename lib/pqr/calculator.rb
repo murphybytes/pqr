@@ -17,20 +17,21 @@ module PQR
       @total_kw_generated = 0.0
       @dataset = opts.fetch( :dataset, nil )
       raise "Missing dataset in calculator, data set is required" if @dataset.nil?
-      @thermal_storage_modeler = ThermalStorageModeler.new( @dataset )
+      @thermal_storage = ThermalStorageModeler.new( @dataset )
       yield self if block_given?
       pretty_print
     end
 
     def process_sample( sample )
       result = {}
+      @thermal_storage.apply_normal_usage
       handle_generated_kw( sample, result )
       calc_heating_kw_required( sample, result )
       calc_load_unserved( sample, result )
 
       if result[:kw_load_unserved]
         # reduce using thermal storage if possible
-        
+        apply_thermal_to_load_unserved( result )
       else
         # try to charge thermal storage if possible
       end
@@ -70,6 +71,16 @@ module PQR
         result[:kw_load_unserved] = result[:heating_kw_required] - result[:kw_generated]
       end
       @total_load_unserved += result[:kw_load_unserved]
+      # we will adjust link n synch number later
+      @total_load_unserved_ls += result[:kw_load_unserved]
+    end
+
+    def apply_thermal_to_load_unserved( result )
+      available = @thermal_storage.get_available
+      adjustment = [available, result[:kw_load_unserved] ].min
+      result[:kw_load_unserved_ls] = result[:kw_load_unserved] - adjustment
+      @total_load_unserved_ls -= adjustment
+      @thermal_storage.adjust_available( adjustment )
     end
 
   end

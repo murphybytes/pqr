@@ -33,4 +33,14 @@ describe PQR::Utils do
     test = DateTime.new( 2012, 11, 10, 12 )
     PQR::Utils.is_peak?( test ).should be_false
   end
+
+  it "should calculate kw required for heated water use" do
+    kwh = PQR::Utils.gph_to_kwh( 54, 60 )
+    kwh.to_i.should eq 8
+  end
+
+  it "should calculate energy stored in water at particular temp delta from ambient temp" do
+    kwh = PQR::Utils.calc_energy_stored( 264.170083266, 68, 194 )
+    kwh.round(1).should eq 81.7 
+  end
 end
