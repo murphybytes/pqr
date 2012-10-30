@@ -125,6 +125,7 @@ Trollop::options do
     opt :capacity, "Storage per unit in Kw", type: :double
     opt :storage, "Initialization storage in Kw", type: :double
     opt :charge_rate, "Rate at which storage can take a charge", type: :double
+    opt :base_threshold, "Threshold where we must charge", type: :double
     opt :usage, "Reduction in storage due to usage/cooling kW/hr", type: :double
 end
 when "delete"

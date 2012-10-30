@@ -9,7 +9,7 @@ options = OpenStruct.new
 options.data_set_name = nil
 options.environment = "development"
 options.base_temperature = 60
-options.home_count = 1000
+options.home_count = 600
 
 opts = OptionParser.new do | opts |
   opts.banner = "Usage: summary-calculator [options]"
@@ -24,11 +24,11 @@ opts = OptionParser.new do | opts |
     options.environment = value
   end
 
-  opts.on( "-b", "--base-temparature VALUE",  "If outside temperature drops below base temperature (F) home heating is calculated. Default = #{options.base_temperature}" ) do | value |
+  opts.on( "-b", "--base-temparature VALUE",  Integer, "If outside temperature drops below base temperature (F) home heating is calculated. Default = #{options.base_temperature}" ) do | value |
     options.base_temperature = value
   end
 
-  opts.on( "-n", "--home-count VALUE", "Number of homes used to calculate Kw load. Default = #{options.home_count}" ) do | value |
+  opts.on( "-n", "--home-count VALUE", Integer, "Number of homes used to calculate Kw load. Default = #{options.home_count}" ) do | value |
     options.home_count = value
   end
 

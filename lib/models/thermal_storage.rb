@@ -28,10 +28,10 @@ class ThermalStorage
 
   def self.fetch_by_dataset( dataset, name ) 
     results = []
-    DataSet.where( name: dataset ).each do | ds | 
-      ThermalStorage.where( data_set_id: gds.id, name: name ).each do | ts | 
+    DataSet.where( name: dataset ).each do | ds |
+      ThermalStorage.where( data_set_id: ds.id, name: name ).each do | ts |
         results << ts
-        yield ts 
+        yield ts
       end
     end
     results

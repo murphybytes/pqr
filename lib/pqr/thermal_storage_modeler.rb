@@ -11,7 +11,7 @@ module PQR
     def get_available
       response = 0.0
       @dataset.thermal_storages.each do | ts |
-        response += ( ts.storage - ts.base_threshold )
+        response += [( ts.storage - ts.base_threshold ), 0 ].max
       end
       response 
     end
@@ -31,6 +31,14 @@ module PQR
       end
     end
 
+    def total_capacity 
+      total_capacity = 0.0
+      @dataset.thermal_storages.each do | ts |
+        total_capacity += ts.capacity
+      end
+      total_capacity
+    end
+
     def total_storage
       total_storage = 0.0
       @dataset.thermal_storages.each do | ts |
@@ -38,11 +46,22 @@ module PQR
       end
       total_storage
     end
-
+    #
+    # charges storage as much as possible, returns amount of power used
+    #
     def charge( kw )
+      total_charge = 0.0
+
+      @dataset.thermal_storages.each do | ts |
+        charge = [kw, ts.charge_rate].min
+        storage_available = ts.capacity - ts.storage
+        charge = [charge, storage_available].min
+        ts.storage += charge
+        total_charge += charge
+      end
+
+      total_charge
     end
-
-
 
   end
 end

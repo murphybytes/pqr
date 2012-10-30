@@ -7,14 +7,19 @@ module PQR
 
   class Calculator
     def initialize( opts = {}  )
+
+      @counter = 0
       @home_temp = opts.fetch( :home_temperature, 70.0 )
       @base_temp = opts.fetch( :base_temperature,  60.0 )
       @home_count = opts.fetch( :home_count, 1000 )
+
       @total_kw_required_for_heating = 0.0
       @total_kw_required_for_heating_ls = 0.0
       @total_load_unserved = 0.0
       @total_load_unserved_ls = 0.0
       @total_kw_generated = 0.0
+      @excess_peak_capacity = 0.0
+      @excess_off_peak_capacity = 0.0
       @dataset = opts.fetch( :dataset, nil )
       raise "Missing dataset in calculator, data set is required" if @dataset.nil?
       @thermal_storage = ThermalStorageModeler.new( @dataset )
@@ -29,11 +34,19 @@ module PQR
       calc_heating_kw_required( sample, result )
       calc_load_unserved( sample, result )
 
-      if result[:kw_load_unserved]
+      if result[:kw_load_unserved] > 0.0
         # reduce using thermal storage if possible
         apply_thermal_to_load_unserved( result )
       else
         # try to charge thermal storage if possible
+        unless  Utils.is_peak?(sample.timestamp)
+          result[:excess_capacity] = [ result[:kw_generated] - result[:heating_kw_required], 0.0 ].max
+          if result[:excess_capacity] > 0.0 
+            used = @thermal_storage.charge( result[:excess_capacity] )
+            @excess_off_peak_capacity += (result[:excess_capacity] - used )
+          end
+        end
+
       end
 
       @total_kw_required_for_heating_ls += result[:heating_kw_required_ls]
@@ -79,8 +92,11 @@ module PQR
       available = @thermal_storage.get_available
       adjustment = [available, result[:kw_load_unserved] ].min
       result[:kw_load_unserved_ls] = result[:kw_load_unserved] - adjustment
+      result[:heating_kw_required_ls] -= adjustment
       @total_load_unserved_ls -= adjustment
-      @thermal_storage.adjust_available( adjustment )
+      @thermal_storage.reduce_available( adjustment )
+      #exit if @counter > 100
+      @counter += 1
     end
 
   end

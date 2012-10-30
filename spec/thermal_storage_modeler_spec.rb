@@ -26,6 +26,26 @@ describe PQR::ThermalStorageModeler do
     @modeler = PQR::ThermalStorageModeler.new( @data_set )
   end
 
+  it "should apply 0 charge when fully charged" do
+    charge_available = ( 6.0 * 100 ) + ( 6.0 * 200 )
+    @modeler.charge( charge_available ).should eq 0.0
+  end
+
+  it "should apply fractional charge when there is more charge than capacity" do
+    charge = ( 6.0 * 200 ) + ( 6.0 * 100 )
+    expected = ( 1.0 * 200 ) + ( 1.0 * 100 )
+    @modeler.reduce_available( expected )
+    @modeler.charge( charge ).should eq expected
+    @modeler.total_storage.should eq @modeler.total_capacity
+  end
+
+  it "should not exceed max charge rate" do
+    charge = ( 5.0 * 200 ) + ( 5.0 * 100 )
+    expected = ( 4.0 * 200 ) + ( 4.0 * 100 )
+    @modeler.reduce_available( ( 5.0 * 100 ) + ( 5.0 * 200 ) )
+    @modeler.charge( charge ).should eq expected
+  end
+
   it "should be creatable" do
     thermal_storage = FactoryGirl.create( :thermal_storage, name: 'Bob' )
     expect( thermal_storage ).to_not be_nil
